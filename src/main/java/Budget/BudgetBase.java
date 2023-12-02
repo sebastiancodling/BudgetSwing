@@ -71,7 +71,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         JLabel totalIncomeLabel = new JLabel("Total Income");
         addComponent(totalIncomeLabel, 3, 0);
 
-        // set up text box for displaying total income.  Users cam view, but cannot directly edit it
+        // set up text box for displaying total income.  Users can view, but cannot directly edit it
         totalIncomeField = new JTextField("0", 10);   // 0 initially, with 10 columns
         totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
         totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
