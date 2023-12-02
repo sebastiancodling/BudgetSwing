@@ -12,7 +12,7 @@
 // Not the prettiest layout, but relatively straightforward
 // Students who use IntelliJ or Eclipse may want to use the UI designers in these IDEs , instead of GridBagLayout
 package Budget;
-
+//Test
 // Swing imports
 import javax.swing.*;
 import java.awt.event.*;
