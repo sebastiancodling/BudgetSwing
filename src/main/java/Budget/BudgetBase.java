@@ -70,7 +70,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         otherOutgoingsComponents = addSet("Other Outgoings", 9);
 
         // Row 3 - Total Income label followed by total income field
-        JLabel totalIncomeLabel = new JLabel("Total Income");
+        JLabel totalIncomeLabel = new JLabel("Total income");
         addComponent(totalIncomeLabel, 10, 0);
 
         // set up text box for displaying total income.  Users can view, but cannot directly edit it
@@ -79,17 +79,20 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
         addComponent(totalIncomeField, 10, 1);
 
+        JLabel freqLabel = new JLabel("per month");
+        addComponent(freqLabel, 11, 1);
+
         // Row 4 - Calculate Button
         calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 11, 0);
+        addComponent(calculateButton, 12, 0);
 
         // Row 5 - Exit Button
         undoButton = new JButton("Undo");
-        addComponent(undoButton, 12, 0);
+        addComponent(undoButton, 13, 0);
 
         // Row 5 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 13, 0);
+        addComponent(exitButton, 14, 0);
 
         // set up  listeners (in a separate method)
         initListeners();
@@ -140,7 +143,36 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         dropdown.addItem("per year");
         addComponent(dropdown, gridRow, 2);
 
+        // Spreadsheet behaviour implementation - call the calculateTotalIncome method when focus shifts or action taken
+        textField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) { // Call when focus changes
+                calculateTotalIncome();
+            }
+        });
+
+        dropdown.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) { // Call when dropdown option selected
+                calculateTotalIncome();
+            }
+        });
+
         return new fieldComponents(textField, dropdown);
+    }
+
+    // Method to convert user inputs to per month
+    private double conversion(double value, JComboBox<String> dropdown) {
+        String frequency = (String) dropdown.getSelectedItem();
+        switch (frequency) {
+            case "per week":
+                return value * 4.3333333;
+            case "per year":
+                return value / 12;
+            case "per month":
+            default:
+                return value;
+        }
     }
 
     // update totalIncomeField (eg, when Calculate is pressed)
@@ -148,16 +180,17 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     public double calculateTotalIncome() {
 
         // Income values from income text fields.  value is NaN if an error occurs
-        double wages = getTextFieldValue(wagesComponents.textField);
-        double loans = getTextFieldValue(loansComponents.textField);
-        double sales = getTextFieldValue(salesComponents.textField);
-        double otherIncome = getTextFieldValue(otherIncomeComponents.textField);
+        double wages = conversion(getTextFieldValue(wagesComponents.textField), wagesComponents.dropdown);
+        double loans = conversion(getTextFieldValue(loansComponents.textField), loansComponents.dropdown);
+        double sales = conversion(getTextFieldValue(salesComponents.textField), salesComponents.dropdown);
+        double otherIncome = conversion(getTextFieldValue(otherIncomeComponents.textField), otherIncomeComponents.dropdown);
 
         // Expense values
-        double food = getTextFieldValue(foodComponents.textField);
-        double rent = getTextFieldValue(rentComponents.textField);
-        double commuting = getTextFieldValue(commutingComponents.textField);
-        double otherOutgoings = getTextFieldValue(otherOutgoingsComponents.textField);
+        double food = conversion(getTextFieldValue(foodComponents.textField), foodComponents.dropdown);
+        double rent = conversion(getTextFieldValue(rentComponents.textField), rentComponents.dropdown);
+        double commuting = conversion(getTextFieldValue(commutingComponents.textField), commutingComponents.dropdown);
+        double otherOutgoings = conversion(getTextFieldValue(otherOutgoingsComponents.textField), otherOutgoingsComponents.dropdown);
+
 
         // clear total field and return if any value is NaN (error)
         if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(sales) || Double.isNaN(otherIncome) ||
