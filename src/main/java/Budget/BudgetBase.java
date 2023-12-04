@@ -40,7 +40,6 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         }
     }
 
-
     // constructor - create UI  (dont need to change this)
     public BudgetBase(JFrame frame) {
         topLevelFrame = frame; // keep track of top-level frame
@@ -48,7 +47,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         initComponents();  // initalise components
     }
 
-    // initialise componenents
+    // initialise components
     // Note that this method is quite long.  Can be shortened by putting Action Listener stuff in a separate method
     // will be generated automatically by IntelliJ, Eclipse, etc
     private void initComponents() {
@@ -148,24 +147,45 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     // use double to hold numbers, so user can type fractional amounts such as 134.50
     public double calculateTotalIncome() {
 
-        // get values from income text fields.  value is NaN if an error occurs
+        // Income values from income text fields.  value is NaN if an error occurs
         double wages = getTextFieldValue(wagesComponents.textField);
         double loans = getTextFieldValue(loansComponents.textField);
+        double sales = getTextFieldValue(salesComponents.textField);
+        double otherIncome = getTextFieldValue(otherIncomeComponents.textField);
+
+        // Expense values
+        double food = getTextFieldValue(foodComponents.textField);
+        double rent = getTextFieldValue(rentComponents.textField);
+        double commuting = getTextFieldValue(commutingComponents.textField);
+        double otherOutgoings = getTextFieldValue(otherOutgoingsComponents.textField);
 
         // clear total field and return if any value is NaN (error)
-        if (Double.isNaN(wages) || Double.isNaN(loans)) {
+        if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(sales) || Double.isNaN(otherIncome) ||
+                Double.isNaN(food) || Double.isNaN(rent) || Double.isNaN(commuting) || Double.isNaN(otherOutgoings)) {
             totalIncomeField.setText("");  // clear total income field
-            wages = 0.0;
-            return wages;   // exit method and do nothing
+            System.out.println("Error: value is NaN");
+            return 0.0;  // exit method and do nothing
         }
 
-        // otherwise calculate total income and update text field
-        double totalIncome = wages + loans;
-        totalIncomeField.setText(String.format("%.2f",totalIncome));  // format with 2 digits after the .
-        return totalIncome;
+        // Calculate total income
+        double totalIncome = wages + loans + sales + otherIncome;
+
+        // Calculate total expenses
+        double totalExpenses = food + rent + commuting + otherOutgoings;
+
+        // Calculate net income
+        double netIncome = totalIncome - totalExpenses;
+
+        totalIncomeField.setText(String.format("%.2f",netIncome));  // format with 2 digits after the .
+        if (netIncome < 0) {
+            totalIncomeField.setForeground(Color.RED);  // Set  colour to red for negative net income
+        } else {
+            totalIncomeField.setForeground(Color.BLACK);  // Set text colour to black for positive net income
+        }
+        return netIncome;
     }
 
-    // return the value if a text field as a double
+    // return the value of a text field as a double
     // --return 0 if field is blank
     // --return NaN if field is not a number
     private double getTextFieldValue(JTextField field) {
