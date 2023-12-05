@@ -20,8 +20,6 @@ import java.awt.*;
 import java.util.Stack;
 import java.util.Map;
 import java.util.HashMap;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 
 // class definition
 public class BudgetBase extends JPanel {    // based on Swing JPanel
@@ -213,21 +211,6 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
                 undo();
             }
         });
-
-    }
-
-    private void addKeyListener(JTextField textField) {
-        textField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) {
-                calculateTotalIncome();
-            }
-            public void removeUpdate(DocumentEvent e) {
-                calculateTotalIncome();
-            }
-            public void insertUpdate(DocumentEvent e) {
-                calculateTotalIncome();
-            }
-        });
     }
 
     // add a component at specified row and column in UI.  (0,0) is top-left corner
@@ -237,6 +220,15 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         layoutConstraints.gridy = gridrow;
         add(component, layoutConstraints);
 
+    }
+
+    private void addEnterListener(JTextField textField) {
+        textField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                calculateTotalIncome();
+            }
+        });
     }
 
     // Method to add replicated sets
@@ -276,7 +268,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             }
         });
 
-        addKeyListener(textField);
+        addEnterListener(textField);
         return new fieldComponents(textField, dropdown);
     }
 
