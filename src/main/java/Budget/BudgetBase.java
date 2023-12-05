@@ -17,6 +17,11 @@ package Budget;
 import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
+import java.util.Stack;
+import java.util.Map;
+import java.util.HashMap;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 
 // class definition
 public class BudgetBase extends JPanel {    // based on Swing JPanel
@@ -29,6 +34,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private JButton calculateButton, exitButton, undoButton;      // Exit button
     private JTextField totalIncomeField; // Total Income field
     private fieldComponents wagesComponents, loansComponents, salesComponents, otherIncomeComponents, foodComponents, rentComponents, commutingComponents, otherOutgoingsComponents; // Variables to store results per section
+    private Stack<BudgetState> states = new Stack<>();
+    private boolean isUserAction = true;
+    private boolean errorShown = false;
 
     class fieldComponents {
         JTextField textField;
@@ -40,11 +48,88 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         }
     }
 
-    // constructor - create UI  (dont need to change this)
+    // constructor - create UI  (don't need to change this)
     public BudgetBase(JFrame frame) {
         topLevelFrame = frame; // keep track of top-level frame
         setLayout(new GridBagLayout());  // use GridBag layout
         initComponents();  // initalise components
+    }
+
+    private void saveState() {
+        Map<String, Double> fieldValue = new HashMap<>();
+        Map<String, String> dropdownValue = new HashMap<>();
+
+        fieldValue.put("wages", getTextFieldValue(wagesComponents.textField));
+        dropdownValue.put("wage frequency", (String) wagesComponents.dropdown.getSelectedItem());
+        fieldValue.put("loans", getTextFieldValue(loansComponents.textField));
+        dropdownValue.put("loans frequency", (String) loansComponents.dropdown.getSelectedItem());
+        fieldValue.put("sales", getTextFieldValue(salesComponents.textField));
+        dropdownValue.put("sales frequency", (String) salesComponents.dropdown.getSelectedItem());
+        fieldValue.put("other income", getTextFieldValue(otherIncomeComponents.textField));
+        dropdownValue.put("other income frequency", (String) otherIncomeComponents.dropdown.getSelectedItem());
+        fieldValue.put("food", getTextFieldValue(foodComponents.textField));
+        dropdownValue.put("food frequency", (String) foodComponents.dropdown.getSelectedItem());
+        fieldValue.put("rent", getTextFieldValue(rentComponents.textField));
+        dropdownValue.put("rent frequency", (String) rentComponents.dropdown.getSelectedItem());
+        fieldValue.put("commuting", getTextFieldValue(commutingComponents.textField));
+        dropdownValue.put("commuting frequency", (String) commutingComponents.dropdown.getSelectedItem());
+        fieldValue.put("other outgoings", getTextFieldValue(otherOutgoingsComponents.textField));
+        dropdownValue.put("other outgoings frequency", (String) otherOutgoingsComponents.dropdown.getSelectedItem());
+
+        for (Double value : fieldValue.values()) {
+            if (Double.isNaN(value)) {
+                System.out.println("Debug: Failed to save state due to NaN value.");
+                return;
+            }
+        }
+
+        if (!states.isEmpty()) {
+            BudgetState previousState = states.peek();
+            Map<String, Double> previousFieldValue = previousState.getFieldValue();
+            Map<String, String> previousDropdownValue = previousState.getDropdownValue();
+
+            if (fieldValue.equals(previousFieldValue) && dropdownValue.equals(previousDropdownValue)) {
+                System.out.println("Debug: Current state is the same as the previous saved state, not storing current state.");
+                return;
+            }
+        }
+
+        System.out.println("Debug: Saved the state.");
+        states.push(new BudgetState(fieldValue, dropdownValue));
+    }
+
+    private void retrieveState(BudgetState state) {
+        isUserAction = false;
+        Map<String, Double> fieldValues = state.getFieldValue();
+        Map<String, String> dropdownValues = state.getDropdownValue();
+
+        wagesComponents.textField.setText(String.format("%.2f", fieldValues.get("wages")));
+        wagesComponents.dropdown.setSelectedItem(dropdownValues.get("wage frequency"));
+        loansComponents.textField.setText(String.format("%.2f", fieldValues.get("loans")));
+        loansComponents.dropdown.setSelectedItem(dropdownValues.get("loans frequency"));
+        salesComponents.textField.setText(String.format("%.2f", fieldValues.get("sales")));
+        salesComponents.dropdown.setSelectedItem(dropdownValues.get("sales frequency"));
+        otherIncomeComponents.textField.setText(String.format("%.2f", fieldValues.get("other income")));
+        otherIncomeComponents.dropdown.setSelectedItem(dropdownValues.get("other income frequency"));
+        foodComponents.textField.setText(String.format("%.2f", fieldValues.get("food")));
+        foodComponents.dropdown.setSelectedItem(dropdownValues.get("food frequency"));
+        rentComponents.textField.setText(String.format("%.2f", fieldValues.get("rent")));
+        rentComponents.dropdown.setSelectedItem(dropdownValues.get("rent frequency"));
+        commutingComponents.textField.setText(String.format("%.2f", fieldValues.get("commuting")));
+        commutingComponents.dropdown.setSelectedItem(dropdownValues.get("commuting frequency"));
+        otherOutgoingsComponents.textField.setText(String.format("%.2f", fieldValues.get("other outgoings")));
+        otherOutgoingsComponents.dropdown.setSelectedItem(dropdownValues.get("other outgoings frequency"));
+
+        isUserAction = true;
+        System.out.println("Debug: Attempt to retrieve the state.");
+    }
+
+    private void undo() {
+        System.out.println("Debug: Undo function being called.");
+        if (!states.isEmpty()) {
+            BudgetState previousState = states.pop();
+            retrieveState(previousState);
+        }
     }
 
     // initialise components
@@ -69,7 +154,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         commutingComponents = addSet("Commuting", 8);
         otherOutgoingsComponents = addSet("Other Outgoings", 9);
 
-        // Row 3 - Total Income label followed by total income field
+        // Row 10 - Total Income label followed by total income field
         JLabel totalIncomeLabel = new JLabel("Total income");
         addComponent(totalIncomeLabel, 10, 0);
 
@@ -82,20 +167,22 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         JLabel freqLabel = new JLabel("per month");
         addComponent(freqLabel, 11, 1);
 
-        // Row 4 - Calculate Button
+        // Row 12 - Calculate Button
         calculateButton = new JButton("Calculate");
         addComponent(calculateButton, 12, 0);
 
-        // Row 5 - Exit Button
+        // Row 13 - Undo Button
         undoButton = new JButton("Undo");
         addComponent(undoButton, 13, 0);
 
-        // Row 5 - Exit Button
+        // Row 14 - Exit Button
         exitButton = new JButton("Exit");
         addComponent(exitButton, 14, 0);
 
         // set up  listeners (in a separate method)
         initListeners();
+
+        saveState();
     }
 
     // set up listeners
@@ -112,10 +199,35 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // calculateButton - call calculateTotalIncome() when pressed
         calculateButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                calculateTotalIncome();
+                if (isUserAction) {
+                    saveState();
+                    calculateTotalIncome();
+                }
             }
         });
 
+        // undoButton - call undo() when pressed
+        undoButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                undo();
+            }
+        });
+
+    }
+
+    private void addKeyListener(JTextField textField) {
+        textField.getDocument().addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {
+                calculateTotalIncome();
+            }
+            public void removeUpdate(DocumentEvent e) {
+                calculateTotalIncome();
+            }
+            public void insertUpdate(DocumentEvent e) {
+                calculateTotalIncome();
+            }
+        });
     }
 
     // add a component at specified row and column in UI.  (0,0) is top-left corner
@@ -146,24 +258,36 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // Spreadsheet behaviour implementation - call the calculateTotalIncome method when focus shifts or action taken
         textField.addFocusListener(new FocusAdapter() {
             @Override
-            public void focusLost(FocusEvent e) { // Call when focus changes
-                calculateTotalIncome();
+            public void focusLost(FocusEvent e) {
+                if (isUserAction) {
+                    saveState();
+                    calculateTotalIncome();
+                }
             }
         });
 
         dropdown.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) { // Call when dropdown option selected
-                calculateTotalIncome();
+            public void actionPerformed(ActionEvent e) {
+                if (isUserAction) {
+                    saveState();
+                    calculateTotalIncome();
+                }
             }
         });
 
+        addKeyListener(textField);
         return new fieldComponents(textField, dropdown);
     }
 
     // Method to convert user inputs to per month
     private double conversion(double value, JComboBox<String> dropdown) {
         String frequency = (String) dropdown.getSelectedItem();
+
+        if (frequency == null) {
+            return 0;
+        }
+
         switch (frequency) {
             case "per week":
                 return value * 4.3333333;
@@ -196,8 +320,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(sales) || Double.isNaN(otherIncome) ||
                 Double.isNaN(food) || Double.isNaN(rent) || Double.isNaN(commuting) || Double.isNaN(otherOutgoings)) {
             totalIncomeField.setText("");  // clear total income field
-            System.out.println("Error: value is NaN");
-            return 0.0;  // exit method and do nothing
+            System.out.println("Debug: Value is NaN.");
+            showError("Please enter a valid number.");
+            return 0.0; // exit method and do nothing
         }
 
         // Calculate total income
@@ -218,6 +343,17 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         return netIncome;
     }
 
+    private void showError(String message) {
+        if (!errorShown) {
+            errorShown = true;
+            JOptionPane.showMessageDialog(topLevelFrame, message, "Error", JOptionPane.ERROR_MESSAGE);
+            errorShown = false;
+        }
+        else {
+            System.out.println("Debug: Error dialog already open, not opening another one.");
+        }
+    }
+
     // return the value of a text field as a double
     // --return 0 if field is blank
     // --return NaN if field is not a number
@@ -234,15 +370,13 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             try {
                 return Double.parseDouble(fieldString);  // parse field number into a double
              } catch (java.lang.NumberFormatException ex) {  // catch invalid number exception
-                JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid number");  // show error message
                 return Double.NaN;  // return NaN to show that field is not a number
             }
         }
     }
 
-
-// below is standard code to set up Swing, which students shouldnt need to edit much
-    // standard mathod to show UI
+    // below is standard code to set up Swing, which students shouldn't need to edit much
+    // standard method to show UI
     private static void createAndShowGUI() {
 
         //Create and set up the window.
@@ -269,6 +403,4 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             }
         });
     }
-
-
 }
