@@ -30,7 +30,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
     // widgets which may have listeners and/or values
     private JButton calculateButton, exitButton, undoButton;      // Exit button
-    private JTextField totalIncomeField; // Total Income field
+    private JTextField totalBudgetField, totalIncomeField, totalOutgoingField; // Total Income field
     private fieldComponents wagesComponents, loansComponents, salesComponents, otherIncomeComponents, foodComponents, rentComponents, commutingComponents, otherOutgoingsComponents; // Variables to store results per section
     private Stack<BudgetState> states = new Stack<>();
     private JComboBox<String> chooseFrequency;
@@ -62,7 +62,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     }
 
     public Color getColour() {
-        return totalIncomeField.getForeground();
+        return totalBudgetField.getForeground();
     }
 
     public JTextField getWagesTextField() {
@@ -127,6 +127,14 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
     public JComboBox<String> getOtherOutgoingsDropdown() {
         return otherOutgoingsComponents.dropdown;
+    }
+
+    public JComboBox<String> getChooseFrequency() {
+        return chooseFrequency;
+    }
+
+    public JTextField getTotalBudgetField() {
+        return totalBudgetField;
     }
 
     private double convertToDouble(double value) {
@@ -218,7 +226,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
                     retrieveState(previousState);
                 }
             } else {
-                // If there is one state left, peek at it but do not remove it otherwise there'll be nothing more to revert to
+                // If there is one state left, peek at it but do not remove it otherwise there'll be nothing left to revert to
                 previousState = states.peek();
                 retrieveState(previousState);
             }
@@ -250,41 +258,61 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         salesComponents = addSet("Sales", 3);
         otherIncomeComponents = addSet("Other Income", 4);
 
-        JLabel outgoingLabel = new JLabel("Outgoing");
-        addComponent(outgoingLabel, 5, 0);
-
-        foodComponents = addSet("Food", 6);
-        rentComponents = addSet("Rent", 7);
-        commutingComponents = addSet("Commuting", 8);
-        otherOutgoingsComponents = addSet("Other Outgoings", 9);
-
         // Row 10 - Total Income label followed by total income field
-        JLabel totalIncomeLabel = new JLabel("Total income");
-        addComponent(totalIncomeLabel, 10, 0);
+        JLabel totalIncomeLabel = new JLabel("Total Incoming");
+        addComponent(totalIncomeLabel, 5, 0);
 
         // set up text box for displaying total income.  Users can view, but cannot directly edit it
         totalIncomeField = new JTextField("0", 10);   // 0 initially, with 10 columns
         totalIncomeField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
         totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
-        addComponent(totalIncomeField, 10, 1);
+        addComponent(totalIncomeField, 5, 1);
+
+        JLabel outgoingLabel = new JLabel("Outgoing");
+        addComponent(outgoingLabel, 6, 0);
+
+        foodComponents = addSet("Food", 7);
+        rentComponents = addSet("Rent", 8);
+        commutingComponents = addSet("Commuting", 9);
+        otherOutgoingsComponents = addSet("Other Outgoings", 10);
+
+        // Row 10 - Total outgoing label followed by total outgoing field
+        JLabel totalOutgoingLabel = new JLabel("Total Outgoings");
+        addComponent(totalOutgoingLabel, 11, 0);
+
+        // set up text box for displaying total outgoing.  Users can view, but cannot directly edit it
+        totalOutgoingField = new JTextField("0", 10);   // 0 initially, with 10 columns
+        totalOutgoingField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
+        totalOutgoingField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
+        addComponent(totalOutgoingField, 11, 1);
+
+        // Row 10 - Total Budget label followed by total budget field
+        JLabel totalBudgetLabel = new JLabel("Budget");
+        addComponent(totalBudgetLabel, 12, 0);
+
+        // set up text box for displaying total budget.  Users can view, but cannot directly edit it
+        totalBudgetField = new JTextField("0", 10);   // 0 initially, with 10 columns
+        totalBudgetField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
+        totalBudgetField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
+        addComponent(totalBudgetField, 12, 1);
 
         chooseFrequency = new JComboBox<>();
         chooseFrequency.addItem("per week");
         chooseFrequency.addItem("per month");
         chooseFrequency.addItem("per year");
-        addComponent(chooseFrequency, 10, 2);
+        addComponent(chooseFrequency, 12, 2);
 
         // Row 11 - Calculate Button
         calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 11, 0);
+        addComponent(calculateButton, 13, 0);
 
         // Row 11 - Undo Button
         undoButton = new JButton("Undo");
-        addComponent(undoButton, 11, 1);
+        addComponent(undoButton, 13, 1);
 
         // Row 11 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 11, 2);
+        addComponent(exitButton, 13, 2);
 
         // set up  listeners (in a separate method)
         initListeners();
@@ -434,7 +462,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         }
     }
 
-    // update totalIncomeField (eg, when Calculate is pressed)
+    // update totalBudgetField (eg, when Calculate is pressed)
     // use double to hold numbers, so user can type fractional amounts such as 134.50
     public double calculateTotalIncome() {
 
@@ -454,7 +482,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // clear total field and return if any value is NaN (error)
         if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(sales) || Double.isNaN(otherIncome) ||
                 Double.isNaN(food) || Double.isNaN(rent) || Double.isNaN(commuting) || Double.isNaN(otherOutgoings)) {
+            totalBudgetField.setText("");  // clear total budget field
             totalIncomeField.setText("");  // clear total income field
+            totalOutgoingField.setText("");  // clear total outgoing field
             //System.out.println("Debug: Value is NaN.");
             showError("Please enter a valid number.");
             return 0.0; // exit method and do nothing
@@ -469,13 +499,18 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // Calculate net income
         double netIncome = totalIncome - totalExpenses;
 
+        // Convert to required frequency
         double convertedNetIncome = freqConvert(netIncome);
+        double convertedTotalIncome = freqConvert(totalIncome);
+        double convertedTotalExpenses = freqConvert(totalExpenses);
 
-        totalIncomeField.setText(String.format("%.2f", convertedNetIncome));
+        totalBudgetField.setText(String.format("%.2f", convertedNetIncome));
+        totalIncomeField.setText(String.format("%.2f", convertedTotalIncome));
+        totalOutgoingField.setText(String.format("%.2f", convertedTotalExpenses));
         if (convertedNetIncome < 0) {
-            totalIncomeField.setForeground(Color.RED);
+            totalBudgetField.setForeground(Color.RED);
         } else {
-            totalIncomeField.setForeground(Color.BLACK);
+            totalBudgetField.setForeground(Color.BLACK);
         }
         return convertedNetIncome;
     }
