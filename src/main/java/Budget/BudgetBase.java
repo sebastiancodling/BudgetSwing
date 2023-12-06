@@ -35,6 +35,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private Stack<BudgetState> states = new Stack<>();
     private boolean isUserAction = true;
     private boolean errorShown = false;
+    private boolean testMode = false;
 
     class fieldComponents {
         JTextField textField;
@@ -51,6 +52,79 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         topLevelFrame = frame; // keep track of top-level frame
         setLayout(new GridBagLayout());  // use GridBag layout
         initComponents();  // initalise components
+    }
+
+    // Getters and setters
+    public void setTestMode(boolean testMode) {
+        this.testMode = testMode;
+    }
+
+    public Color getColour() {
+        return totalIncomeField.getForeground();
+    }
+
+    public JTextField getWagesTextField() {
+        return wagesComponents.textField;
+    }
+
+    public JTextField getLoansTextField() {
+        return loansComponents.textField;
+    }
+
+    public JTextField getSalesTextField() {
+        return salesComponents.textField;
+    }
+
+    public JTextField getOtherIncomeTextField() {
+        return otherIncomeComponents.textField;
+    }
+
+    public JTextField getFoodTextField() {
+        return foodComponents.textField;
+    }
+
+    public JTextField getRentTextField() {
+        return rentComponents.textField;
+    }
+
+    public JTextField getCommutingTextField() {
+        return commutingComponents.textField;
+    }
+
+    public JTextField getOtherOutgoingsTextField() {
+        return otherOutgoingsComponents.textField;
+    }
+
+    public JComboBox getWagesDropdown() {
+        return wagesComponents.dropdown;
+    }
+
+    public JComboBox getLoansDropdown() {
+        return loansComponents.dropdown;
+    }
+
+    public JComboBox getSalesDropdown() {
+        return salesComponents.dropdown;
+    }
+
+    public JComboBox getOtherIncomeDropdown() {
+        return otherIncomeComponents.dropdown;
+    }
+
+    public JComboBox getFoodDropdown() {
+        return foodComponents.dropdown;
+    }
+
+    public JComboBox getRentDropdown() {
+        return rentComponents.dropdown;
+    }
+
+    public JComboBox getCommutingDropdown() {
+        return commutingComponents.dropdown;
+    }
+
+    public JComboBox getOtherOutgoingsDropdown() {
+        return otherOutgoingsComponents.dropdown;
     }
 
     private void saveState() {
@@ -169,13 +243,13 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         calculateButton = new JButton("Calculate");
         addComponent(calculateButton, 12, 0);
 
-        // Row 13 - Undo Button
+        // Row 12 - Undo Button
         undoButton = new JButton("Undo");
-        addComponent(undoButton, 13, 0);
+        addComponent(undoButton, 12, 1);
 
-        // Row 14 - Exit Button
+        // Row 12 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 14, 0);
+        addComponent(exitButton, 12, 2);
 
         // set up  listeners (in a separate method)
         initListeners();
@@ -336,13 +410,12 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     }
 
     private void showError(String message) {
-        if (!errorShown) {
+        if (!testMode && !errorShown) {
             errorShown = true;
             JOptionPane.showMessageDialog(topLevelFrame, message, "Error", JOptionPane.ERROR_MESSAGE);
             errorShown = false;
-        }
-        else {
-            System.out.println("Debug: Error dialog already open, not opening another one.");
+        } else {
+            System.out.println("Error: " + message);
         }
     }
 
@@ -350,19 +423,17 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     // --return 0 if field is blank
     // --return NaN if field is not a number
     private double getTextFieldValue(JTextField field) {
-
         // get value as String from field
-        String fieldString = field.getText();  // get text from text field
-
-        if (fieldString.isBlank()) {   // if text field is blank, return 0
+        String fieldString = field.getText();   // get text from text field
+        if (fieldString.isBlank()) {    // if text field is blank, return 0
             return 0;
-        }
-
-        else {  // if text field is not blank, parse it into a double
+        } else if (fieldString.equals("NaN")) {
+            return Double.NaN;
+        } else {    // if text field is not blank, parse it into a double
             try {
-                return Double.parseDouble(fieldString);  // parse field number into a double
-             } catch (java.lang.NumberFormatException ex) {  // catch invalid number exception
-                return Double.NaN;  // return NaN to show that field is not a number
+                return Double.parseDouble(fieldString);     // parse field number into a double
+            } catch (NumberFormatException ex) {       // catch invalid number exception
+                return Double.NaN;      // return NaN to show that field is not a number
             }
         }
     }
