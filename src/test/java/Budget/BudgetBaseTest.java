@@ -1,7 +1,6 @@
 package Budget;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import javax.swing.*;
@@ -44,7 +43,7 @@ public class BudgetBaseTest
 
     @Test
     public void checkEmptyInput() {
-        // Empty text values to check they are being marked as a 0
+        // Empty text values to check they are being marked as a 0.0
 
         bb.getWagesTextField().setText("");
         bb.getLoansTextField().setText("");
@@ -130,6 +129,20 @@ public class BudgetBaseTest
 
         Color outputColor = Color.RED;
         assertEquals(outputColor, bb.getColour());
+    }
+
+    @Test
+    public void testWeekCalculations() {
+        // Testing calculateTotalIncome method with per week inputs
+
+        // Valid inputs, assuming that it will be treated as per week
+        bb.getWagesTextField().setText("1000");
+
+        bb.getWagesDropdown().setSelectedItem("per week");
+
+        // Calculates expected total and tests this is returned
+        double total = (1000 + 200 + 100) - (300 + 700 + 200 + 200);
+        assertEquals(total, bb.calculateTotalIncome(), 0.01);
     }
 
 }

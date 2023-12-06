@@ -33,6 +33,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private JTextField totalIncomeField; // Total Income field
     private fieldComponents wagesComponents, loansComponents, salesComponents, otherIncomeComponents, foodComponents, rentComponents, commutingComponents, otherOutgoingsComponents; // Variables to store results per section
     private Stack<BudgetState> states = new Stack<>();
+    private JComboBox<String> chooseFrequency;
     private boolean isUserAction = true;
     private boolean errorShown = false;
     private boolean testMode = false;
@@ -95,35 +96,35 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         return otherOutgoingsComponents.textField;
     }
 
-    public JComboBox getWagesDropdown() {
+    public JComboBox<String> getWagesDropdown() {
         return wagesComponents.dropdown;
     }
 
-    public JComboBox getLoansDropdown() {
+    public JComboBox<String> getLoansDropdown() {
         return loansComponents.dropdown;
     }
 
-    public JComboBox getSalesDropdown() {
+    public JComboBox<String> getSalesDropdown() {
         return salesComponents.dropdown;
     }
 
-    public JComboBox getOtherIncomeDropdown() {
+    public JComboBox<String> getOtherIncomeDropdown() {
         return otherIncomeComponents.dropdown;
     }
 
-    public JComboBox getFoodDropdown() {
+    public JComboBox<String> getFoodDropdown() {
         return foodComponents.dropdown;
     }
 
-    public JComboBox getRentDropdown() {
+    public JComboBox<String> getRentDropdown() {
         return rentComponents.dropdown;
     }
 
-    public JComboBox getCommutingDropdown() {
+    public JComboBox<String> getCommutingDropdown() {
         return commutingComponents.dropdown;
     }
 
-    public JComboBox getOtherOutgoingsDropdown() {
+    public JComboBox<String> getOtherOutgoingsDropdown() {
         return otherOutgoingsComponents.dropdown;
     }
 
@@ -172,6 +173,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
     private void retrieveState(BudgetState state) {
         isUserAction = false;
+        System.out.println("Debug: isUserAction set to false in retrieveState.");
         Map<String, Double> fieldValues = state.getFieldValue();
         Map<String, String> dropdownValues = state.getDropdownValue();
 
@@ -193,11 +195,11 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         otherOutgoingsComponents.dropdown.setSelectedItem(dropdownValues.get("other outgoings frequency"));
 
         isUserAction = true;
-        System.out.println("Debug: Attempt to retrieve the state.");
+        System.out.println("Debug: isUserAction set to true in retrieveState. Attempt to retrieve the state.");
     }
 
     private void undo() {
-        System.out.println("Debug: Undo function being called.");
+        System.out.println("Debug: Undo function being called. isUserAction = " + isUserAction);
         if (!states.isEmpty()) {
             BudgetState previousState = states.pop();
             retrieveState(previousState);
@@ -236,20 +238,23 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
         addComponent(totalIncomeField, 10, 1);
 
-        JLabel freqLabel = new JLabel("per month");
-        addComponent(freqLabel, 11, 1);
+        chooseFrequency = new JComboBox<>();
+        chooseFrequency.addItem("per week");
+        chooseFrequency.addItem("per month");
+        chooseFrequency.addItem("per year");
+        addComponent(chooseFrequency, 10, 2);
 
-        // Row 12 - Calculate Button
+        // Row 11 - Calculate Button
         calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 12, 0);
+        addComponent(calculateButton, 11, 0);
 
-        // Row 12 - Undo Button
+        // Row 11 - Undo Button
         undoButton = new JButton("Undo");
-        addComponent(undoButton, 12, 1);
+        addComponent(undoButton, 11, 1);
 
-        // Row 12 - Exit Button
+        // Row 11 - Exit Button
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 12, 2);
+        addComponent(exitButton, 11, 2);
 
         // set up  listeners (in a separate method)
         initListeners();
@@ -271,6 +276,19 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // calculateButton - call calculateTotalIncome() when pressed
         calculateButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                System.out.println("Debug: Calculate ActionListener triggered. isUserAction = " + isUserAction);
+                if (isUserAction) {
+                    saveState();
+                    calculateTotalIncome();
+                }
+            }
+        });
+
+        // Choose frequency - call calculateTotalIncome() when total frequency changed
+        chooseFrequency.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("Debug: Total income frequency change triggered. isUserAction = " + isUserAction);
                 if (isUserAction) {
                     saveState();
                     calculateTotalIncome();
@@ -283,6 +301,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             public void actionPerformed(ActionEvent e) {
 
                 undo();
+                calculateTotalIncome();
             }
         });
     }
@@ -325,6 +344,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         textField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
+                System.out.println("Debug: Focus lost triggered. isUserAction = " + isUserAction);
                 if (isUserAction) {
                     saveState();
                     calculateTotalIncome();
@@ -335,6 +355,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         dropdown.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                System.out.println("Debug: Dropdown action triggered. isUserAction = " + isUserAction);
                 if (isUserAction) {
                     saveState();
                     calculateTotalIncome();
@@ -362,6 +383,24 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             case "per month":
             default:
                 return value;
+        }
+    }
+
+    // Display net income in the desired frequency of the dropdown selection
+    private double freqConvert(double value) {
+        String selectedFreq = (String) chooseFrequency.getSelectedItem();
+        if (selectedFreq == null) {
+            return value; // Default to original value if no frequency is selected
+        }
+
+        switch (selectedFreq) {
+            case "per week":
+                return value / 4.3333333; // Monthly to weekly
+            case "per year":
+                return value * 12; // Monthly to yearly
+            case "per month":
+            default:
+                return value; // If already monthly do nothing else
         }
     }
 
@@ -400,13 +439,15 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // Calculate net income
         double netIncome = totalIncome - totalExpenses;
 
-        totalIncomeField.setText(String.format("%.2f",netIncome));  // format with 2 digits after the .
-        if (netIncome < 0) {
-            totalIncomeField.setForeground(Color.RED);  // Set  colour to red for negative net income
+        double convertedNetIncome = freqConvert(netIncome);
+
+        totalIncomeField.setText(String.format("%.2f", convertedNetIncome));
+        if (convertedNetIncome < 0) {
+            totalIncomeField.setForeground(Color.RED);
         } else {
-            totalIncomeField.setForeground(Color.BLACK);  // Set text colour to black for positive net income
+            totalIncomeField.setForeground(Color.BLACK);
         }
-        return netIncome;
+        return convertedNetIncome;
     }
 
     private void showError(String message) {
