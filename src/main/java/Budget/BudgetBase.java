@@ -55,8 +55,8 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         setLayout(new GridBagLayout());  // use GridBag layout
         this.setBorder(new EmptyBorder(30, 30, 30, 30));
         layoutConstraints.fill = GridBagConstraints.BOTH; // Allow resizing
-        layoutConstraints.weightx = 1.0;
-        layoutConstraints.weighty = 1.0;
+        layoutConstraints.weightx = 0.3;
+        layoutConstraints.weighty = 0.7;
 
         initComponents();  // initialise components
     }
