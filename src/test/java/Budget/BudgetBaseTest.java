@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import javax.swing.*;
 
 // Swing imports
-import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
 
@@ -16,11 +15,11 @@ import java.awt.*;
  */
 public class BudgetBaseTest 
 {
-    /**
-     * Rigorous Test :-)
-     */
     private BudgetBase bb;
 
+    /**
+     * Initialises frame for testing before any tests are ran
+     */
     @BeforeEach
     public void setFrame() {
         JFrame frame = new JFrame();
@@ -28,10 +27,11 @@ public class BudgetBaseTest
         bb.setTestMode(true);
     }
 
+    /**
+     * Checks 0.0 output returned if all fields default/blank
+     */
     @Test
     public void shouldTotal() {
-        // Testing that 0.0 output returned if all fields are default/blank
-
         JFrame frame = new JFrame();
         BudgetBase bb = new BudgetBase(frame);
         double output = 0.0;
@@ -39,6 +39,9 @@ public class BudgetBaseTest
         assertEquals(output, bb.calculateTotalIncome() );
     }
 
+    /**
+     * Checks empty input fields are treated as 0
+     */
     @Test
     public void checkEmptyInput() {
         // Empty text values to check they are being marked as a 0.0
@@ -56,6 +59,9 @@ public class BudgetBaseTest
         assertEquals(output, bb.calculateTotalIncome(), 0.01); // Allow float rounding and check correct output
     }
 
+    /**
+     * Checks NaN inputs are treated as 0
+     */
     @Test
     public void checkInvalidInput() {
         // Checking NaN inputs are treated as 0.0
@@ -73,6 +79,9 @@ public class BudgetBaseTest
         assertEquals(output, bb.calculateTotalIncome(), 0.01); // Allow float rounding and check correct output
     }
 
+    /**
+     * Checks calculateTotalIncome method is functioning, and tests month dropdown calculations
+     */
     @Test
     public void testCalculateTotalIncome() {
         // Testing calculateTotalIncome method, as well as per month calculations
@@ -103,6 +112,9 @@ public class BudgetBaseTest
         assertEquals(total, bb.calculateTotalIncome(), 0.01);
     }
 
+    /**
+     * Checks for black colour of budget amount when positive
+     */
     @Test
     public void checkPositiveIncomeColour() {
         // Check the total income is black when positive
@@ -117,6 +129,9 @@ public class BudgetBaseTest
         assertEquals(outputColor, bb.getColour());
     }
 
+    /**
+     * Checks for red colour of budget amount when negative
+     */
     @Test
     public void checkNegativeIncomeColour() {
         // Check the total income is red when negative
@@ -131,6 +146,9 @@ public class BudgetBaseTest
         assertEquals(outputColor, bb.getColour());
     }
 
+    /**
+     * Checks for correct calculation with per week dropdowns
+     */
     @Test
     public void testWeekCalculations() {
         // Testing calculateTotalIncome method with per week inputs
@@ -147,6 +165,9 @@ public class BudgetBaseTest
         assertEquals(total, bb.calculateTotalIncome(), 0.01);
     }
 
+    /**
+     * Checks for correct calculation with per year dropdowns
+     */
     @Test
     public void testYearCalculations() {
         // Testing calculateTotalIncome method with per year inputs
@@ -163,6 +184,9 @@ public class BudgetBaseTest
         assertEquals(total, bb.calculateTotalIncome(), 0.01);
     }
 
+    /**
+     * Checks for spreadsheet behaviour, focus shifts should run calculateTotalIncome
+     */
     @Test
     public void testFocusShift() {
         // Testing that focus shifts update the total budget
@@ -184,6 +208,9 @@ public class BudgetBaseTest
         assertEquals(String.format("%.2f", output), bb.getTotalBudgetField().getText());
     }
 
+    /**
+     * Checks for spreadsheet behaviour, pressing Enter should run calculateTotalIncome
+     */
     @Test
     public void testEnterPress() {
         // Testing that pressing enter update the total budget
@@ -199,7 +226,7 @@ public class BudgetBaseTest
 
         // Reference: https://stackoverflow.com/questions/21075354/how-can-i-simulate-keypress-in-junit-test
         // Test simulating enter key press
-        KeyEvent enterPress = new KeyEvent(bb.getWagesTextField(), KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER);
+        KeyEvent enterPress = new KeyEvent(bb.getWagesTextField(), KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED);
         bb.getWagesTextField().dispatchEvent(enterPress);
 
         // Calculate expected total income and tests this is returned
@@ -207,8 +234,11 @@ public class BudgetBaseTest
         assertEquals(String.format("%.2f", output), bb.getTotalBudgetField().getText());
     }
 
+    /**
+     * Checks single level of undo runs as expected
+     */
     @Test
-    public void test1Undo() {
+    public void testFirstUndo() {
         // Testing a single level of undo
 
         // Valid inputs, assuming that it will be treated as per year
@@ -221,12 +251,67 @@ public class BudgetBaseTest
         bb.getWagesTextField().setText("500");
         bb.getWagesTextField().transferFocus(); // Triggers save
 
-        // Call undo
-        bb.undo();
+        // Call undo via button
+        bb.getUndoButton().doClick();
 
         // Check value has changed to the previous state
         String output = "1000.00";
         assertEquals(output, bb.getWagesTextField().getText());
     }
 
+    /**
+     * Checks two levels of undo run as expected
+     */
+    @Test
+    public void testSecondUndo() {
+        // Testing two levels of undo
+
+        // Valid inputs, assuming that it will be treated as per year
+        bb.getWagesTextField().setText("1000");
+        bb.getWagesDropdown().setSelectedItem("per year");
+        bb.getChooseFrequency().setSelectedItem("per year");
+        bb.getWagesTextField().transferFocus(); // Triggers save
+
+        // Change value for a new state
+        bb.getWagesTextField().setText("500");
+        bb.getWagesTextField().transferFocus(); // Triggers save
+
+        // Call undo via button two times
+        bb.getUndoButton().doClick();
+        bb.getUndoButton().doClick();
+
+        // Check value has changed to the previous state
+        String output = "0.00";
+        assertEquals(output, bb.getWagesTextField().getText());
+    }
+
+    /**
+     * Checks that undo system cannot be 'bricked' by undoing to the point where all states are removed from the stack,
+     * creating a deficiency in states to restore to
+     */
+    @Test
+    public void testUnexpectedUndo() {
+        // Testing that pressing the undo button more times than the number of states on the stack doesn't break undo
+
+        // Valid inputs, assuming that it will be treated as per year
+        bb.getWagesTextField().setText("1000");
+        bb.getWagesDropdown().setSelectedItem("per year");
+        bb.getChooseFrequency().setSelectedItem("per year");
+        bb.getWagesTextField().transferFocus(); // Triggers save
+
+        // Call undo via button two times, simulating an extra accidental undo
+        bb.getUndoButton().doClick();
+        bb.getUndoButton().doClick();
+
+        // Change value for a new state
+        bb.getWagesTextField().setText("500");
+        bb.getWagesTextField().transferFocus(); // Triggers save
+
+        // Call undo via button
+        bb.getUndoButton().doClick();
+
+        // Check value has changed to the default state
+        String output = "0.00";
+        assertEquals(output, bb.getWagesTextField().getText());
+    }
 }

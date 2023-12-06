@@ -1,19 +1,8 @@
-// base code for student budget assessment
-// Students do not need to use this code in their assessment, fine to junk it and do something different!
-//
-// Your submission must be a maven project, and must be submitted via Codio, and run in Codio
-//
-// user can enter in wages and loans and calculate total income
-//
+
 // run in Codio 
 // To see GUI, run with java and select Box Url from Codio top line menu
-//
-// Layout - Uses GridBag layout in a straightforward way, every component has a (column, row) position in the UI grid
-// Not the prettiest layout, but relatively straightforward
-// Students who use IntelliJ or Eclipse may want to use the UI designers in these IDEs , instead of GridBagLayout
+
 package Budget;
-//Test
-// Swing imports
 import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
@@ -21,7 +10,9 @@ import java.util.Stack;
 import java.util.Map;
 import java.util.HashMap;
 
-// class definition
+/**
+ * Main class - extends JPanel. Handles UI and calculations.
+ */
 public class BudgetBase extends JPanel {    // based on Swing JPanel
 
     // high level UI stuff
@@ -32,14 +23,18 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private JButton calculateButton, exitButton, undoButton;      // Exit button
     private JTextField totalBudgetField, totalIncomeField, totalOutgoingField; // Total Income field
     private fieldComponents wagesComponents, loansComponents, salesComponents, otherIncomeComponents, foodComponents, rentComponents, commutingComponents, otherOutgoingsComponents; // Variables to store results per section
-    private Stack<BudgetState> states = new Stack<>();
+    private final Stack<BudgetState> states = new Stack<>();
     private JComboBox<String> chooseFrequency;
     private boolean isUserAction = true;
     private boolean errorShown = false;
     private boolean testMode = false;
     private boolean newSave = false;
 
-    class fieldComponents {
+
+    /**
+     * Inner class to make reusable field components for each input field category
+     */
+    static class fieldComponents {
         JTextField textField;
         JComboBox<String> dropdown;
 
@@ -49,18 +44,27 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         }
     }
 
-    // constructor - create UI  (don't need to change this)
+    /**
+     * Constructor to initialise BudgetBase
+     */
     public BudgetBase(JFrame frame) {
         topLevelFrame = frame; // keep track of top-level frame
         setLayout(new GridBagLayout());  // use GridBag layout
-        initComponents();  // initalise components
+        initComponents();  // initialise components
     }
 
-    // Getters and setters
+    // Getters and setters so that methods can be easily tested without making methods public
+
+    /**
+     * Used to put BudgetBase in test mode
+     * In test mode, features like pop-up dialogs are disabled to enable automated testing
+     * @param testMode Boolean to enable or disable test mode
+     */
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
 
+    // Getters and setters
     public Color getColour() {
         return totalBudgetField.getForeground();
     }
@@ -137,10 +141,24 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         return totalBudgetField;
     }
 
+    public JButton getUndoButton() {
+        return undoButton;
+    }
+
+
+    /**
+     * Converts value to double with 2dp
+     * @param value Takes value to be converted
+     * @return double value to 2dp
+     */
     private double convertToDouble(double value) {
         return Double.parseDouble(String.format("%.2f", value));
     }
 
+
+    /**
+     * Pushes save states to the save stack
+     */
     private void saveState() {
         Map<String, Double> fieldValue = new HashMap<>();
         Map<String, String> dropdownValue = new HashMap<>();
@@ -185,6 +203,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         newSave = true;
     }
 
+    /**
+     * Method to set the state to the previous saved state on the stack
+     */
     private void retrieveState(BudgetState state) {
         isUserAction = false;
         Map<String, Double> fieldValues = state.getFieldValue();
@@ -211,6 +232,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         //System.out.println("Debug: Attempt to retrieve the state.");
     }
 
+    /**
+     * Undo function, supports multiple levels of undo
+     */
     private void undo() {
         if (!states.isEmpty()) {
             BudgetState previousState;
@@ -244,9 +268,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     }
 
 
-    // initialise components
-    // Note that this method is quite long.  Can be shortened by putting Action Listener stuff in a separate method
-    // will be generated automatically by IntelliJ, Eclipse, etc
+    /**
+     * Initialises GUI components
+     */
     private void initComponents() {
 
         // Top row (0) - "Incoming" label
@@ -320,51 +344,46 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         saveState();
     }
 
-    // set up listeners
-    // initially just for buttons, can add listeners for text fields
+    /**
+     * Set up listeners for some interactive components
+     */
     private void initListeners() {
 
         // exitButton - exit program when pressed
-        exitButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
+        exitButton.addActionListener(e -> System.exit(0));
 
         // calculateButton - call calculateTotalIncome() when pressed
-        calculateButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                //System.out.println("Debug: Calculate ActionListener triggered. isUserAction = " + isUserAction);
-                if (isUserAction) {
-                    saveState();
-                    calculateTotalIncome();
-                }
+        calculateButton.addActionListener(e -> {
+            //System.out.println("Debug: Calculate ActionListener triggered. isUserAction = " + isUserAction);
+            if (isUserAction) {
+                saveState();
+                calculateTotalIncome();
             }
         });
 
         // Choose frequency - call calculateTotalIncome() when total frequency changed
-        chooseFrequency.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                //System.out.println("Debug: Total income frequency change triggered. isUserAction = " + isUserAction);
-                if (isUserAction) {
-                    saveState();
-                    calculateTotalIncome();
-                }
+        chooseFrequency.addActionListener(e -> {
+            //System.out.println("Debug: Total income frequency change triggered. isUserAction = " + isUserAction);
+            if (isUserAction) {
+                saveState();
+                calculateTotalIncome();
             }
         });
 
         // undoButton - call undo() when pressed
-        undoButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        undoButton.addActionListener(e -> {
 
-                undo();
-                calculateTotalIncome();
-            }
+            undo();
+            calculateTotalIncome();
         });
     }
 
-    // add a component at specified row and column in UI.  (0,0) is top-left corner
+    /**
+     * Adds component to panel in the given grid position
+     * @param component Component to be added
+     * @param gridrow Row
+     * @param gridcol Column
+     */
     private void addComponent(Component component, int gridrow, int gridcol) {
         layoutConstraints.fill = GridBagConstraints.HORIZONTAL;   // always use horizontal fill
         layoutConstraints.gridx = gridcol;
@@ -373,16 +392,23 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
     }
 
+
+    /**
+     * Used to add the spreadsheet behaviour by updating when enter is pressed
+     * Uses lambda
+     * @param textField Field to which listener is being added to
+     */
     private void addEnterListener(JTextField textField) {
-        textField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                calculateTotalIncome();
-            }
-        });
+        textField.addActionListener(e -> calculateTotalIncome());
     }
 
-    // Method to add replicated sets
+    /**
+     * Method to easily set up each row of components, reducing repetitive set up of input fields
+     * Adds event listeners for focus shift and changing dropdown
+     * @param labelText Text for the label/description of the cost
+     * @param gridRow Row where components will be placed
+     * @return Object with text field and dropdown components
+     */
     private fieldComponents addSet(String labelText, int gridRow) {
 
         JLabel label = new JLabel(labelText);
@@ -410,14 +436,12 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             }
         });
 
-        dropdown.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                //System.out.println("Debug: Dropdown action triggered. isUserAction = " + isUserAction);
-                if (isUserAction) {
-                    saveState();
-                    calculateTotalIncome();
-                }
+        // Spreadsheet behaviour implementation - call the calculateTotalIncome method when dropdown pressed
+        dropdown.addActionListener(e -> {
+            //System.out.println("Debug: Dropdown action triggered. isUserAction = " + isUserAction);
+            if (isUserAction) {
+                saveState();
+                calculateTotalIncome();
             }
         });
 
@@ -425,7 +449,12 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         return new fieldComponents(textField, dropdown);
     }
 
-    // Method to convert user inputs to per month
+    /**
+     * Convert input to frequency specified in dropdown
+     * @param value Value to be converted
+     * @param dropdown Dropdown component with frequency
+     * @return Converted value in the chosen frequency
+     */
     private double conversion(double value, JComboBox<String> dropdown) {
         String frequency = (String) dropdown.getSelectedItem();
 
@@ -444,11 +473,15 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         }
     }
 
-    // Display net income in the desired frequency of the dropdown selection
+    /**
+     * Convert value to chosen frequency from dropdown
+     * @param value Value to be converted
+     * @return Value converted to chosen frequency
+     */
     private double freqConvert(double value) {
         String selectedFreq = (String) chooseFrequency.getSelectedItem();
         if (selectedFreq == null) {
-            return value; // Default to original value if no frequency is selected
+            return value; // Default to original value if no frequency selected
         }
 
         switch (selectedFreq) {
@@ -462,8 +495,12 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         }
     }
 
-    // update totalBudgetField (eg, when Calculate is pressed)
-    // use double to hold numbers, so user can type fractional amounts such as 134.50
+    /**
+     * Calculates the total income from text values and dropdown frequencies
+     * Called for every change in value
+     * Can calculate fractional amounts up to 2dp
+     * @return Calculated net income (surplus/deficit)
+     */
     public double calculateTotalIncome() {
 
         // Income values from income text fields.  value is NaN if an error occurs
@@ -486,7 +523,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             totalIncomeField.setText("");  // clear total income field
             totalOutgoingField.setText("");  // clear total outgoing field
             //System.out.println("Debug: Value is NaN.");
-            showError("Please enter a valid number.");
+            showError();
             return 0.0; // exit method and do nothing
         }
 
@@ -515,19 +552,23 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         return convertedNetIncome;
     }
 
-    private void showError(String message) {
+    /**
+     * Shows error message when number is negative or NaN
+     */
+    private void showError() {
         if (!testMode && !errorShown) {
             errorShown = true;
-            JOptionPane.showMessageDialog(topLevelFrame, message, "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(topLevelFrame, "Please enter a valid positive number.", "Error", JOptionPane.ERROR_MESSAGE);
             errorShown = false;
-        } else {
-            System.out.println("Error: " + message);
         }
     }
 
-    // return the value of a text field as a double
-    // --return 0 if field is blank
-    // --return NaN if field is not a number
+    /**
+     * Gets value from text field and converts to double
+     * Returns 0 if field is blank and NaN if the input is not a valid number
+     * @param field Text field where value needs to be retrieved
+     * @return Value as a double/NaN
+     */
     private double getTextFieldValue(JTextField field) {
         String fieldString = field.getText();
         if (fieldString.isBlank()) {
@@ -535,7 +576,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         } else {
             try {
                 double value = Double.parseDouble(fieldString);
-                return convertToDouble(value);
+                return convertToDouble(Math.abs(value)); // Convert to a positive number
             } catch (NumberFormatException ex) {
                 return Double.NaN;
             }
@@ -560,14 +601,12 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         frame.setVisible(true);
     }
 
-    // standard main class to set up Swing UI
+    /**
+     * Main method which creates and shows GUI
+     */
     public static void main(String[] args) {
         //Schedule a job for the event-dispatching thread:
         //creating and showing this application's GUI.
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                createAndShowGUI();
-            }
-        });
+        javax.swing.SwingUtilities.invokeLater(BudgetBase::createAndShowGUI);
     }
 }
