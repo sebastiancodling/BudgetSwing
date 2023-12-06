@@ -3,6 +3,7 @@
 // To see GUI, run with java and select Box Url from Codio top line menu
 
 package Budget;
+import com.formdev.flatlaf.FlatIntelliJLaf;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.Insets;
@@ -11,7 +12,6 @@ import java.awt.*;
 import java.util.Stack;
 import java.util.Map;
 import java.util.HashMap;
-import com.formdev.flatlaf.FlatIntelliJLaf;
 
 /**
  * Main class - extends JPanel. Handles UI and calculations.
@@ -32,7 +32,6 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private boolean errorShown = false;
     private boolean testMode = false;
     private boolean newSave = false;
-
 
     /**
      * Inner class to make reusable field components for each input field category
