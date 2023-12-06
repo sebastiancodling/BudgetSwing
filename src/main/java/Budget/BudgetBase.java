@@ -37,6 +37,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     private boolean isUserAction = true;
     private boolean errorShown = false;
     private boolean testMode = false;
+    private boolean newSave = false;
 
     class fieldComponents {
         JTextField textField;
@@ -128,30 +129,34 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         return otherOutgoingsComponents.dropdown;
     }
 
+    private double convertToDouble(double value) {
+        return Double.parseDouble(String.format("%.2f", value));
+    }
+
     private void saveState() {
         Map<String, Double> fieldValue = new HashMap<>();
         Map<String, String> dropdownValue = new HashMap<>();
 
-        fieldValue.put("wages", getTextFieldValue(wagesComponents.textField));
+        fieldValue.put("wages", convertToDouble(getTextFieldValue(wagesComponents.textField)));
         dropdownValue.put("wage frequency", (String) wagesComponents.dropdown.getSelectedItem());
-        fieldValue.put("loans", getTextFieldValue(loansComponents.textField));
+        fieldValue.put("loans", convertToDouble(getTextFieldValue(loansComponents.textField)));
         dropdownValue.put("loans frequency", (String) loansComponents.dropdown.getSelectedItem());
-        fieldValue.put("sales", getTextFieldValue(salesComponents.textField));
+        fieldValue.put("sales", convertToDouble(getTextFieldValue(salesComponents.textField)));
         dropdownValue.put("sales frequency", (String) salesComponents.dropdown.getSelectedItem());
-        fieldValue.put("other income", getTextFieldValue(otherIncomeComponents.textField));
+        fieldValue.put("other income", convertToDouble(getTextFieldValue(otherIncomeComponents.textField)));
         dropdownValue.put("other income frequency", (String) otherIncomeComponents.dropdown.getSelectedItem());
-        fieldValue.put("food", getTextFieldValue(foodComponents.textField));
+        fieldValue.put("food", convertToDouble(getTextFieldValue(foodComponents.textField)));
         dropdownValue.put("food frequency", (String) foodComponents.dropdown.getSelectedItem());
-        fieldValue.put("rent", getTextFieldValue(rentComponents.textField));
+        fieldValue.put("rent", convertToDouble(getTextFieldValue(rentComponents.textField)));
         dropdownValue.put("rent frequency", (String) rentComponents.dropdown.getSelectedItem());
-        fieldValue.put("commuting", getTextFieldValue(commutingComponents.textField));
+        fieldValue.put("commuting", convertToDouble(getTextFieldValue(commutingComponents.textField)));
         dropdownValue.put("commuting frequency", (String) commutingComponents.dropdown.getSelectedItem());
-        fieldValue.put("other outgoings", getTextFieldValue(otherOutgoingsComponents.textField));
+        fieldValue.put("other outgoings", convertToDouble(getTextFieldValue(otherOutgoingsComponents.textField)));
         dropdownValue.put("other outgoings frequency", (String) otherOutgoingsComponents.dropdown.getSelectedItem());
 
         for (Double value : fieldValue.values()) {
             if (Double.isNaN(value)) {
-                System.out.println("Debug: Failed to save state due to NaN value.");
+                //System.out.println("Debug: Failed to save state due to NaN value.");
                 return;
             }
         }
@@ -162,18 +167,18 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
             Map<String, String> previousDropdownValue = previousState.getDropdownValue();
 
             if (fieldValue.equals(previousFieldValue) && dropdownValue.equals(previousDropdownValue)) {
-                System.out.println("Debug: Current state is the same as the previous saved state, not storing current state.");
+                //System.out.println("Debug: Current state is the same as the previous saved state, not storing current state.");
                 return;
             }
         }
 
-        System.out.println("Debug: Saved the state.");
+        //System.out.println("Debug: Saved the state.");
         states.push(new BudgetState(fieldValue, dropdownValue));
+        newSave = true;
     }
 
     private void retrieveState(BudgetState state) {
         isUserAction = false;
-        System.out.println("Debug: isUserAction set to false in retrieveState.");
         Map<String, Double> fieldValues = state.getFieldValue();
         Map<String, String> dropdownValues = state.getDropdownValue();
 
@@ -195,16 +200,41 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         otherOutgoingsComponents.dropdown.setSelectedItem(dropdownValues.get("other outgoings frequency"));
 
         isUserAction = true;
-        System.out.println("Debug: isUserAction set to true in retrieveState. Attempt to retrieve the state.");
+        //System.out.println("Debug: Attempt to retrieve the state.");
     }
 
     private void undo() {
-        System.out.println("Debug: Undo function being called. isUserAction = " + isUserAction);
         if (!states.isEmpty()) {
-            BudgetState previousState = states.pop();
-            retrieveState(previousState);
+            BudgetState previousState;
+
+            // If more than one state, pop most recent state
+            if (states.size() > 1) {
+                previousState = states.pop();
+                retrieveState(previousState);
+
+                // If new state was saved since last undo and there's still 1 or more state left, undo again
+                if (newSave && states.size() > 1) {
+                    previousState = states.pop();
+                    retrieveState(previousState);
+                }
+            } else {
+                // If there is one state left, peek at it but do not remove it otherwise there'll be nothing more to revert to
+                previousState = states.peek();
+                retrieveState(previousState);
+            }
+
+            newSave = false;
         }
+
+        /* Debug: Print current state of the stack
+        System.out.println("Debug: Current State of the Stack after Undo:");
+        for (BudgetState state : states) {
+            System.out.println("State: " + state.getFieldValue() + ", " + state.getDropdownValue());
+        }
+
+         */
     }
+
 
     // initialise components
     // Note that this method is quite long.  Can be shortened by putting Action Listener stuff in a separate method
@@ -276,7 +306,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         // calculateButton - call calculateTotalIncome() when pressed
         calculateButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Debug: Calculate ActionListener triggered. isUserAction = " + isUserAction);
+                //System.out.println("Debug: Calculate ActionListener triggered. isUserAction = " + isUserAction);
                 if (isUserAction) {
                     saveState();
                     calculateTotalIncome();
@@ -288,7 +318,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         chooseFrequency.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Debug: Total income frequency change triggered. isUserAction = " + isUserAction);
+                //System.out.println("Debug: Total income frequency change triggered. isUserAction = " + isUserAction);
                 if (isUserAction) {
                     saveState();
                     calculateTotalIncome();
@@ -344,7 +374,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         textField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                System.out.println("Debug: Focus lost triggered. isUserAction = " + isUserAction);
+                //System.out.println("Debug: Focus lost triggered. isUserAction = " + isUserAction);
                 if (isUserAction) {
                     saveState();
                     calculateTotalIncome();
@@ -355,7 +385,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         dropdown.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Debug: Dropdown action triggered. isUserAction = " + isUserAction);
+                //System.out.println("Debug: Dropdown action triggered. isUserAction = " + isUserAction);
                 if (isUserAction) {
                     saveState();
                     calculateTotalIncome();
@@ -425,7 +455,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         if (Double.isNaN(wages) || Double.isNaN(loans) || Double.isNaN(sales) || Double.isNaN(otherIncome) ||
                 Double.isNaN(food) || Double.isNaN(rent) || Double.isNaN(commuting) || Double.isNaN(otherOutgoings)) {
             totalIncomeField.setText("");  // clear total income field
-            System.out.println("Debug: Value is NaN.");
+            //System.out.println("Debug: Value is NaN.");
             showError("Please enter a valid number.");
             return 0.0; // exit method and do nothing
         }
@@ -464,17 +494,15 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     // --return 0 if field is blank
     // --return NaN if field is not a number
     private double getTextFieldValue(JTextField field) {
-        // get value as String from field
-        String fieldString = field.getText();   // get text from text field
-        if (fieldString.isBlank()) {    // if text field is blank, return 0
-            return 0;
-        } else if (fieldString.equals("NaN")) {
-            return Double.NaN;
-        } else {    // if text field is not blank, parse it into a double
+        String fieldString = field.getText();
+        if (fieldString.isBlank()) {
+            return 0.0;
+        } else {
             try {
-                return Double.parseDouble(fieldString);     // parse field number into a double
-            } catch (NumberFormatException ex) {       // catch invalid number exception
-                return Double.NaN;      // return NaN to show that field is not a number
+                double value = Double.parseDouble(fieldString);
+                return convertToDouble(value);
+            } catch (NumberFormatException ex) {
+                return Double.NaN;
             }
         }
     }
