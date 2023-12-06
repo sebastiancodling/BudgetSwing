@@ -4,11 +4,14 @@
 
 package Budget;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.Insets;
 import java.awt.event.*;
 import java.awt.*;
 import java.util.Stack;
 import java.util.Map;
 import java.util.HashMap;
+import com.formdev.flatlaf.FlatIntelliJLaf;
 
 /**
  * Main class - extends JPanel. Handles UI and calculations.
@@ -45,11 +48,16 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     }
 
     /**
-     * Constructor to initialise BudgetBase
+     * Constructor to initialise BudgetBase and handle frame size and padding
      */
     public BudgetBase(JFrame frame) {
         topLevelFrame = frame; // keep track of top-level frame
         setLayout(new GridBagLayout());  // use GridBag layout
+        this.setBorder(new EmptyBorder(30, 30, 30, 30));
+        layoutConstraints.fill = GridBagConstraints.BOTH; // Allow resizing
+        layoutConstraints.weightx = 1.0;
+        layoutConstraints.weighty = 1.0;
+
         initComponents();  // initialise components
     }
 
@@ -275,6 +283,9 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
         // Top row (0) - "Incoming" label
         JLabel incomeLabel = new JLabel("Incoming");
+        Font f = incomeLabel.getFont();
+        incomeLabel.setFont(f.deriveFont(f.getStyle() | Font.BOLD, 16)); // Set font to bold and increase size
+        incomeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0)); // Add padding
         addComponent(incomeLabel, 0, 0);
 
         wagesComponents= addSet("Wages", 1);
@@ -284,6 +295,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
         // Row 10 - Total Income label followed by total income field
         JLabel totalIncomeLabel = new JLabel("Total Incoming");
+        totalIncomeLabel.setFont(f.deriveFont(f.getStyle() | Font.ITALIC));
         addComponent(totalIncomeLabel, 5, 0);
 
         // set up text box for displaying total income.  Users can view, but cannot directly edit it
@@ -292,7 +304,10 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         totalIncomeField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
         addComponent(totalIncomeField, 5, 1);
 
+
         JLabel outgoingLabel = new JLabel("Outgoing");
+        outgoingLabel.setFont(f.deriveFont(f.getStyle() | Font.BOLD, 16));
+        outgoingLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 5, 0)); // Add padding
         addComponent(outgoingLabel, 6, 0);
 
         foodComponents = addSet("Food", 7);
@@ -302,6 +317,7 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
 
         // Row 10 - Total outgoing label followed by total outgoing field
         JLabel totalOutgoingLabel = new JLabel("Total Outgoings");
+        totalOutgoingLabel.setFont(f.deriveFont(f.getStyle() | Font.ITALIC));
         addComponent(totalOutgoingLabel, 11, 0);
 
         // set up text box for displaying total outgoing.  Users can view, but cannot directly edit it
@@ -310,33 +326,42 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
         totalOutgoingField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
         addComponent(totalOutgoingField, 11, 1);
 
+        JLabel budgetLabel = new JLabel("Budget");
+        budgetLabel.setFont(f.deriveFont(f.getStyle() | Font.BOLD, 16));
+        budgetLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 5, 0)); // Add padding
+        addComponent(budgetLabel, 12, 0);
+
         // Row 10 - Total Budget label followed by total budget field
-        JLabel totalBudgetLabel = new JLabel("Budget");
-        addComponent(totalBudgetLabel, 12, 0);
+        JLabel totalBudgetLabel = new JLabel("Total Budget");
+        totalBudgetLabel.setFont(f.deriveFont(f.getStyle() | Font.ITALIC));
+        addComponent(totalBudgetLabel, 13, 0);
 
         // set up text box for displaying total budget.  Users can view, but cannot directly edit it
         totalBudgetField = new JTextField("0", 10);   // 0 initially, with 10 columns
         totalBudgetField.setHorizontalAlignment(JTextField.RIGHT) ;    // number is at right end of field
         totalBudgetField.setEditable(false);    // user cannot directly edit this field (ie, it is read-only)
-        addComponent(totalBudgetField, 12, 1);
+        addComponent(totalBudgetField, 13, 1);
 
         chooseFrequency = new JComboBox<>();
         chooseFrequency.addItem("per week");
         chooseFrequency.addItem("per month");
         chooseFrequency.addItem("per year");
-        addComponent(chooseFrequency, 12, 2);
-
-        // Row 11 - Calculate Button
-        calculateButton = new JButton("Calculate");
-        addComponent(calculateButton, 13, 0);
+        addComponent(chooseFrequency, 13, 2);
 
         // Row 11 - Undo Button
+        layoutConstraints.insets = new Insets(20, 0, 0, 0);
         undoButton = new JButton("Undo");
-        addComponent(undoButton, 13, 1);
+        addComponent(undoButton, 14, 0);
+
+        // Row 11 - Calculate Button
+        layoutConstraints.insets = new Insets(20, 0, 0, 0);
+        calculateButton = new JButton("Calculate");
+        addComponent(calculateButton, 14, 1);
 
         // Row 11 - Exit Button
+        layoutConstraints.insets = new Insets(20, 0, 0, 0);
         exitButton = new JButton("Exit");
-        addComponent(exitButton, 13, 2);
+        addComponent(exitButton, 14, 2);
 
         // set up  listeners (in a separate method)
         initListeners();
@@ -348,6 +373,15 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
      * Set up listeners for some interactive components
      */
     private void initListeners() {
+
+        // Reference: https://docs.oracle.com/javase/8/docs/api/java/awt/KeyboardFocusManager.html
+        // Adds ability to lose focus on object when click anywhere in frame
+        topLevelFrame.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            }
+        });
 
         // exitButton - exit program when pressed
         exitButton.addActionListener(e -> System.exit(0));
@@ -607,6 +641,13 @@ public class BudgetBase extends JPanel {    // based on Swing JPanel
     public static void main(String[] args) {
         //Schedule a job for the event-dispatching thread:
         //creating and showing this application's GUI.
+
+        // Reference: https://www.formdev.com/flatlaf/
+        // Rounded corners and setup design theme
+        UIManager.put( "Component.arc", 15 );
+        UIManager.put( "Button.arc", 15 );
+        UIManager.put( "TextComponent.arc", 15 );
+        FlatIntelliJLaf.setup();
         javax.swing.SwingUtilities.invokeLater(BudgetBase::createAndShowGUI);
     }
 }
